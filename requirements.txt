@@ -1,7 +1,7 @@
 Django==3.0.8
 Markdown==3.2.2
 Sphinx==3.1.2
-coverage==3.5.1
+coverage==5.2.1
 django-coverage==1.2.4
 django-debug-toolbar==2.2
 pylint==2.5.3
