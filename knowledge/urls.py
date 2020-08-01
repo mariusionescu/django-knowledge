@@ -1,25 +1,26 @@
-from django.conf.urls import  url
+from django.conf.urls import url
+from django.urls import path, re_path
 
 from knowledge.views import (knowledge_index, knowledge_list, knowledge_thread,
                     knowledge_moderate, knowledge_ask)
 
 urlpatterns = [
-    url(r'^$', knowledge_index, name='knowledge_index'),
+    path(r'', knowledge_index, name='knowledge_index'),
 
-    url(r'^questions/$', knowledge_list, name='knowledge_list'),
+    path(r'questions/', knowledge_list, name='knowledge_list'),
 
-    url(r'^questions/(?P<question_id>\d+)/$',
+    re_path(r'questions/(?P<question_id>\d+)/',
         knowledge_thread, name='knowledge_thread_no_slug'),
 
-    url(r'^questions/(?P<category_slug>[a-z0-9-_]+)/$', knowledge_list,
+    re_path(r'questions/(?P<category_slug>[a-z0-9-_]+)/', knowledge_list,
         name='knowledge_list_category'),
 
-    url(r'^questions/(?P<question_id>\d+)/(?P<slug>[a-z0-9-_]+)/$',
+    re_path(r'questions/(?P<question_id>\d+)/(?P<slug>[a-z0-9-_]+)/',
         knowledge_thread, name='knowledge_thread'),
 
-    url(r'^moderate/(?P<model>[a-z]+)/'
-        r'(?P<lookup_id>\d+)/(?P<mod>[a-zA-Z0-9_]+)/$',
+    re_path(r'moderate/(?P<model>[a-z]+)/'
+        r'(?P<lookup_id>\d+)/(?P<mod>[a-zA-Z0-9_]+)/',
         knowledge_moderate, name='knowledge_moderate'),
 
-    url(r'^ask/$', knowledge_ask, name='knowledge_ask'),
+    path(r'ask/', knowledge_ask, name='knowledge_ask'),
 ]

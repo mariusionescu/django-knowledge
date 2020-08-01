@@ -1,10 +1,10 @@
-from knowledge import settings
-
 import django
+from django.urls import reverse
+from django.conf import settings as django_settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from django.conf import settings as django_settings
 
+from knowledge import settings
 from knowledge.managers import QuestionManager, ResponseManager
 from knowledge.signals import knowledge_post_save
 
@@ -13,7 +13,6 @@ STATUSES = (
     ('private', _('Private')),
     ('internal', _('Internal')),
 )
-
 
 STATUSES_EXTENDED = STATUSES + (
     ('inherit', _('Inherit')),
@@ -46,19 +45,19 @@ class KnowledgeBase(models.Model):
     lastchanged = models.DateTimeField(auto_now=True)
 
     user = models.ForeignKey('auth.User' if django.VERSION < (1, 5, 0) else django_settings.AUTH_USER_MODEL, blank=True,
-                             null=True, db_index=True)
+                             null=True, db_index=True, on_delete=models.CASCADE)
     alert = models.BooleanField(default=settings.ALERTS,
-        verbose_name=_('Alert'),
-        help_text=_('Check this if you want to be alerted when a new'
-                        ' response is added.'))
+                                verbose_name=_('Alert'),
+                                help_text=_('Check this if you want to be alerted when a new'
+                                            ' response is added.'))
 
     # for anonymous posting, if permitted
     name = models.CharField(max_length=64, blank=True, null=True,
-        verbose_name=_('Name'),
-        help_text=_('Enter your first and last name.'))
+                            verbose_name=_('Name'),
+                            help_text=_('Enter your first and last name.'))
     email = models.EmailField(blank=True, null=True,
-        verbose_name=_('Email'),
-        help_text=_('Enter a valid email address.'))
+                              verbose_name=_('Email'),
+                              help_text=_('Enter a valid email address.'))
 
     class Meta:
         abstract = True
@@ -84,8 +83,8 @@ class KnowledgeBase(models.Model):
         their username if all else fails.
         """
         name = (self.name or (self.user and (
-            u'{0} {1}'.format(self.user.first_name, self.user.last_name).strip()\
-            or self.user.username
+                u'{0} {1}'.format(self.user.first_name, self.user.last_name).strip() \
+                or self.user.username
         )))
         return name.strip() or _("Anonymous")
 
@@ -124,22 +123,27 @@ class KnowledgeBase(models.Model):
         self.status = status
         if save:
             self.save()
+
     switch.alters_data = True
 
     def public(self, save=True):
         self.switch('public', save)
+
     public.alters_data = True
 
     def private(self, save=True):
         self.switch('private', save)
+
     private.alters_data = True
 
     def inherit(self, save=True):
         self.switch('inherit', save)
+
     inherit.alters_data = True
 
     def internal(self, save=True):
         self.switch('internal', save)
+
     internal.alters_data = True
 
 
@@ -148,11 +152,11 @@ class Question(KnowledgeBase):
     _requesting_user = None
 
     title = models.CharField(max_length=255,
-        verbose_name=_('Question'),
-        help_text=_('Enter your question or suggestion.'))
+                             verbose_name=_('Question'),
+                             help_text=_('Enter your question or suggestion.'))
     body = models.TextField(blank=True, null=True,
-        verbose_name=_('Description'),
-        help_text=_('Please offer details. Markdown enabled.'))
+                            verbose_name=_('Description'),
+                            help_text=_('Please offer details. Markdown enabled.'))
 
     status = models.CharField(
         verbose_name=_('Status'),
@@ -173,14 +177,13 @@ class Question(KnowledgeBase):
     def __unicode__(self):
         return self.title
 
-    @models.permalink
     def get_absolute_url(self):
         from django.template.defaultfilters import slugify
 
         if settings.SLUG_URLS:
-            return ('knowledge_thread', [self.id, slugify(self.title)])
+            return reverse('knowledge_thread', args=(self.id, slugify(self.title)))
         else:
-            return ('knowledge_thread_no_slug', [self.id])
+            return reverse('knowledge_thread_no_slug', args=(self.id,))
 
     def inherit(self):
         pass
@@ -192,6 +195,7 @@ class Question(KnowledgeBase):
         self.locked = not self.locked
         if save:
             self.save()
+
     lock.alters_data = True
 
     ###################
@@ -220,6 +224,7 @@ class Question(KnowledgeBase):
 
     def clear_accepted(self):
         self.get_responses().update(accepted=False)
+
     clear_accepted.alters_data = True
 
     def accept(self, response=None):
@@ -235,6 +240,7 @@ class Question(KnowledgeBase):
             return True
         else:
             return False
+
     accept.alters_data = True
 
     def states(self):
@@ -252,11 +258,11 @@ class Response(KnowledgeBase):
     is_response = True
 
     question = models.ForeignKey('knowledge.Question',
-        related_name='responses')
+                                 related_name='responses', on_delete=models.CASCADE)
 
     body = models.TextField(blank=True, null=True,
-        verbose_name=_('Response'),
-        help_text=_('Please enter your response. Markdown enabled.'))
+                            verbose_name=_('Response'),
+                            help_text=_('Please enter your response. Markdown enabled.'))
     status = models.CharField(
         verbose_name=_('Status'),
         max_length=32, choices=STATUSES_EXTENDED,
@@ -281,6 +287,7 @@ class Response(KnowledgeBase):
 
     def accept(self):
         self.question.accept(self)
+
     accept.alters_data = True
 
 
